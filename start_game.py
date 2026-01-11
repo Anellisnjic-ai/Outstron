@@ -98,7 +98,7 @@ while True:
     mx, my = pygame.mouse.get_pos()
     click = False
 
-    for event in pygame.event.get():
+    for event in pygameevent.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
@@ -148,5 +148,45 @@ while True:
         speed_text = font_small.render(f"Speed: {speed_kmh} km/h", True, WHITE)
         screen.blit(speed_text, (10, HEIGHT-40))
 
-    pygame.display.flip()
+    pygamedisplay.flip()
     clock.tick(60)
+class Car:
+    def __init__(self):
+        self.image = pygame.Surface((60,30), pygame.SRCALPHA)
+        pygame.draw.polygon(self.image, (255,0,0), [(0,0),(60,15),(0,30)])
+        self.orig_image = self.image
+        self.x = WIDTH // 2
+        self.y = HEIGHT // 2
+        self.angle = 0
+        self.speed = 0
+        self.max_speed = 320 / 3.6  # realistic 320 km/h scaled
+        self.acceleration = 0.3
+        self.brake_deceleration = 0.5
+        self.turn_speed = 3
+
+    def update(self, keys):
+        if keys[pygame.K_w]:
+            self.speed += self.acceleration
+        elif keys[pygame.K_s]:
+            self.speed -= self.brake_deceleration
+        else:
+            self.speed *= 0.98  # friction
+
+        if self.speed > self.max_speed/20:
+            self.speed = self.max_speed/20
+        if self.speed < -self.max_speed/40:
+            self.speed = -self.max_speed/40
+
+        if keys[pygame.K_a]:
+            self.angle += self.turn_speed * (self.speed/2)
+        if keys[pygame.K_d]:
+            self.angle -= self.turn_speed * (self.speed/2)
+
+        rad = math.radians(self.angle)
+        self.x += math.cos(rad) * self.speed
+        self.y -= math.sin(rad) * self.speed
+
+    def draw(self, surface):
+        rotated = pygame.transform.rotate(self.orig_image, self.angle)
+        rect = rotated.get_rect(center=(self.x,self.y))
+        surface.blit(rotated, rect)
