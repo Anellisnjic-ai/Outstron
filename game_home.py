@@ -10,6 +10,8 @@ WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Outstron")
 clock = pygame.time.Clock()
+
+# --- Fonts ---
 font_large = pygame.font.SysFont("Arial", 80)
 font_medium = pygame.font.SysFont("Arial", 50)
 font_small = pygame.font.SysFont("Arial", 30)
@@ -19,15 +21,16 @@ BLUE = (0, 120, 255)
 WHITE = (255, 255, 255)
 GRAY = (50, 50, 50)
 BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
 # --- Game States ---
 STATE_LOADING = "loading"
 STATE_HOME = "home"
 STATE_SINGLEPLAYER = "singleplayer"
-STATE_TIME_TRIAL = "time_trial"
 STATE_CAR_SELECTION = "car_selection"
 STATE_RACE = "race"
 STATE_CONTROLLER_DISCONNECT = "controller_disconnect"
+
 game_state = STATE_LOADING
 
 # --- Buttons ---
@@ -36,48 +39,61 @@ buttons = {}
 def draw_button(text, x, y, w, h, color=BLUE):
     pygame.draw.rect(screen, color, (x, y, w, h))
     label = font_medium.render(text, True, WHITE)
-    label_rect = label.get_rect(center=(x + w//2, y + h//2))
-    screen.blit(label, label_rect)
+    screen.blit(label, label.get_rect(center=(x + w//2, y + h//2)))
     return pygame.Rect(x, y, w, h)
 
 # --- Placeholder Assets ---
 bahrain_track = pygame.Surface((WIDTH, HEIGHT))
 bahrain_track.fill((200, 200, 150))
 audi_rs8 = pygame.Surface((200, 100))
-audi_rs8.fill((255, 0, 0))
+audi_rs8.fill(RED)
 
-controller_connected = True if pygame.joystick.get_count() > 0 else False
+# --- Loading Screen ---
 loading_start_time = time.time()
 loading_duration = 3  # seconds
+
+# --- Controller ---
+controller_connected = pygame.joystick.get_count() > 0
 
 # --- Main Loop ---
 while True:
     screen.fill(GRAY)
     mx, my = pygame.mouse.get_pos()
     click = False
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                click = True
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            click = True
+
         elif event.type == pygame.JOYDEVICEREMOVED:
             controller_connected = False
             game_state = STATE_CONTROLLER_DISCONNECT
+
         elif event.type == pygame.JOYDEVICEADDED:
             controller_connected = True
+
+        elif game_state == STATE_CONTROLLER_DISCONNECT:
+            # Any key or button continues
+            if event.type in [pygame.KEYDOWN, pygame.JOYBUTTONDOWN, pygame.MOUSEBUTTONDOWN]:
+                game_state = STATE_HOME
+                controller_connected = True
 
     # --- Loading Screen ---
     if game_state == STATE_LOADING:
         screen.fill(BLACK)
         load_text = font_large.render("Loading...", True, BLUE)
         screen.blit(load_text, load_text.get_rect(center=(WIDTH//2, HEIGHT//2)))
-        # Progress bar (optional)
+
+        # Progress bar
         elapsed = time.time() - loading_start_time
         progress = min(elapsed / loading_duration, 1)
         pygame.draw.rect(screen, WHITE, (WIDTH//4, HEIGHT//2 + 60, WIDTH//2, 30), 2)
         pygame.draw.rect(screen, BLUE, (WIDTH//4 + 2, HEIGHT//2 + 62, (WIDTH//2 - 4) * progress, 26))
+
         if elapsed >= loading_duration:
             game_state = STATE_HOME
 
@@ -88,9 +104,6 @@ while True:
         sub = font_small.render("Press any button to continue", True, WHITE)
         screen.blit(msg, msg.get_rect(center=(WIDTH//2, HEIGHT//2 - 50)))
         screen.blit(sub, sub.get_rect(center=(WIDTH//2, HEIGHT//2 + 50)))
-        if click or event.type == pygame.KEYDOWN or event.type == pygame.JOYBUTTONDOWN:
-            game_state = STATE_HOME
-            controller_connected = True
 
     # --- Home Screen ---
     elif game_state == STATE_HOME:
@@ -98,11 +111,10 @@ while True:
         screen.blit(title, title.get_rect(center=(WIDTH//2, HEIGHT//4)))
 
         buttons['singleplayer'] = draw_button("Singleplayer", WIDTH//2-150, HEIGHT//2, 300, 80)
-        buttons['multiplayer'] = draw_button("Multiplayer", WIDTH//2-150, HEIGHT//2 - 120, 300, 80, color=GRAY)  # Placeholder
+        buttons['multiplayer'] = draw_button("Multiplayer", WIDTH//2-150, HEIGHT//2 - 120, 300, 80, color=GRAY)
 
-        if click:
-            if buttons['singleplayer'].collidepoint(mx, my):
-                game_state = STATE_SINGLEPLAYER
+        if click and buttons['singleplayer'].collidepoint(mx, my):
+            game_state = STATE_SINGLEPLAYER
 
     # --- Singleplayer Screen ---
     elif game_state == STATE_SINGLEPLAYER:
@@ -110,9 +122,8 @@ while True:
         screen.blit(title, title.get_rect(center=(WIDTH//2, HEIGHT//4)))
 
         buttons['time_trial'] = draw_button("Time Trial", WIDTH//2-150, HEIGHT//2, 300, 80)
-        if click:
-            if buttons['time_trial'].collidepoint(mx, my):
-                game_state = STATE_CAR_SELECTION
+        if click and buttons['time_trial'].collidepoint(mx, my):
+            game_state = STATE_CAR_SELECTION
 
     # --- Car Selection Screen ---
     elif game_state == STATE_CAR_SELECTION:
@@ -122,9 +133,8 @@ while True:
         buttons['audi'] = draw_button("Audi RS8", WIDTH//2-150, HEIGHT//2, 300, 80)
         screen.blit(audi_rs8, (WIDTH//2-100, HEIGHT//2 + 100))
 
-        if click:
-            if buttons['audi'].collidepoint(mx, my):
-                game_state = STATE_RACE
+        if click and buttons['audi'].collidepoint(mx, my):
+            game_state = STATE_RACE
 
     # --- Race Screen ---
     elif game_state == STATE_RACE:
@@ -135,4 +145,3 @@ while True:
 
     pygame.display.flip()
     clock.tick(60)
-
