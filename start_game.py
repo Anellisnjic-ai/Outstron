@@ -1,39 +1,53 @@
 import tkinter as tk
 from tkinter import ttk
-import time
 import threading
+import time
 
+# Function to simulate loading
 def start_loading():
     for percent in range(101):
         if percent == 99:
             label_text.set("Outstron")
         progress_bar['value'] = percent
         percent_label.config(text=f"{percent}%")
-        time.sleep(0.05)
+        root.update()  # update the GUI
+        time.sleep(0.03)  # faster loading for smoothness
     label_text.set("Done! Game Started!")
 
-def start_game():
-    start_button.config(state="disabled")
+# Automatically start loading
+def auto_start():
+    start_button.pack_forget()  # hide start button
     threading.Thread(target=start_loading).start()
 
+# Create full screen window
 root = tk.Tk()
 root.title("Start Game")
-root.geometry("400x200")
-root.resizable(False, False)
+root.attributes('-fullscreen', True)  # FULLSCREEN
+root.configure(bg='#0a0a0a')  # dark background like Minecraft
 
+# Minecraft-style label
 label_text = tk.StringVar()
 label_text.set("Loading")
-label = tk.Label(root, textvariable=label_text, font=("Arial", 24))
-label.pack(pady=20)
+label = tk.Label(root, textvariable=label_text, font=("Minecraft", 48, "bold"), fg="#ffffff", bg="#0a0a0a")
+label.pack(pady=100)
 
-progress_bar = ttk.Progressbar(root, length=300)
-progress_bar.pack(pady=10)
+# Progress bar style
+style = ttk.Style()
+style.theme_use('clam')
+style.configure("red.Horizontal.TProgressbar", foreground='green', background='green', thickness=30)
 
-percent_label = tk.Label(root, text="0%", font=("Arial", 16))
-percent_label.pack()
+progress_bar = ttk.Progressbar(root, length=800, style="red.Horizontal.TProgressbar")
+progress_bar.pack(pady=20)
 
-start_button = tk.Button(root, text="Start Game", font=("Arial", 16), command=start_game)
-start_button.pack(pady=10)
+# Percent label
+percent_label = tk.Label(root, text="0%", font=("Minecraft", 32, "bold"), fg="#ffffff", bg="#0a0a0a")
+percent_label.pack(pady=20)
+
+# Start button (optional)
+start_button = tk.Button(root, text="Start Game", font=("Minecraft", 24, "bold"), fg="#ffffff", bg="#333333", command=auto_start)
+start_button.pack(pady=50)
+
+# Automatically start after 1 second for single-click effect
+root.after(1000, auto_start)
 
 root.mainloop()
-
