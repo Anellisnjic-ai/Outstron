@@ -10,8 +10,8 @@ def start_loading():
             label_text.set("Outstron")
         progress_bar['value'] = percent
         percent_label.config(text=f"{percent}%")
-        root.update()  # update the GUI
-        time.sleep(0.03)  # faster loading for smoothness
+        root.update()  # update GUI
+        time.sleep(0.03)  # smooth speed
     label_text.set("Done! Game Started!")
 
 # Automatically start loading
@@ -19,35 +19,43 @@ def auto_start():
     start_button.pack_forget()  # hide start button
     threading.Thread(target=start_loading).start()
 
-# Create full screen window
+# Create main window
 root = tk.Tk()
 root.title("Start Game")
-root.attributes('-fullscreen', True)  # FULLSCREEN
+
+# Force fullscreen and remove window decorations
+root.attributes('-fullscreen', True)  # fullscreen
+root.attributes('-topmost', True)  # always on top
+root.overrideredirect(True)  # remove title bar
 root.configure(bg='#0a0a0a')  # dark background like Minecraft
 
 # Minecraft-style label
 label_text = tk.StringVar()
 label_text.set("Loading")
-label = tk.Label(root, textvariable=label_text, font=("Minecraft", 48, "bold"), fg="#ffffff", bg="#0a0a0a")
-label.pack(pady=100)
+label = tk.Label(root, textvariable=label_text, font=("Arial", 48, "bold"), fg="#ffffff", bg="#0a0a0a")
+label.pack(expand=True, pady=50)
 
 # Progress bar style
 style = ttk.Style()
 style.theme_use('clam')
-style.configure("red.Horizontal.TProgressbar", foreground='green', background='green', thickness=30)
+style.configure("green.Horizontal.TProgressbar", foreground='green', background='green', thickness=40)
 
-progress_bar = ttk.Progressbar(root, length=800, style="red.Horizontal.TProgressbar")
+progress_bar = ttk.Progressbar(root, length=root.winfo_screenwidth() - 200, style="green.Horizontal.TProgressbar")
 progress_bar.pack(pady=20)
 
 # Percent label
-percent_label = tk.Label(root, text="0%", font=("Minecraft", 32, "bold"), fg="#ffffff", bg="#0a0a0a")
+percent_label = tk.Label(root, text="0%", font=("Arial", 32, "bold"), fg="#ffffff", bg="#0a0a0a")
 percent_label.pack(pady=20)
 
-# Start button (optional)
-start_button = tk.Button(root, text="Start Game", font=("Minecraft", 24, "bold"), fg="#ffffff", bg="#333333", command=auto_start)
+# Optional Start button
+start_button = tk.Button(root, text="Start Game", font=("Arial", 24, "bold"), fg="#ffffff", bg="#333333", command=auto_start)
 start_button.pack(pady=50)
 
 # Automatically start after 1 second for single-click effect
 root.after(1000, auto_start)
 
+# Close window on Escape key (useful for testing)
+root.bind("<Escape>", lambda e: root.destroy())
+
 root.mainloop()
+
