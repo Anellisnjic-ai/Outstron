@@ -3,7 +3,6 @@ import sys
 import time
 
 pygame.init()
-pygame.joystick.init()
 
 # --- Screen Setup ---
 WIDTH, HEIGHT = 1280, 720
@@ -52,8 +51,14 @@ audi_rs8.fill(RED)
 loading_start_time = time.time()
 loading_duration = 3  # seconds
 
-# --- Controller ---
-controller_connected = pygame.joystick.get_count() > 0
+# --- Joystick Setup ---
+pygame.joystick.init()
+joystick_count = pygame.joystick.get_count()
+joystick_connected = joystick_count > 0
+joystick = None
+if joystick_connected:
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
 
 # --- Main Loop ---
 while True:
@@ -69,18 +74,24 @@ while True:
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             click = True
 
-        elif event.type == pygame.JOYDEVICEREMOVED:
-            controller_connected = False
-            game_state = STATE_CONTROLLER_DISCONNECT
+        # Only check joystick events if a joystick exists
+        if joystick_connected:
+            if event.type == pygame.JOYDEVICEREMOVED:
+                joystick_connected = False
+                game_state = STATE_CONTROLLER_DISCONNECT
+            elif event.type == pygame.JOYDEVICEADDED:
+                joystick_connected = True
+                joystick = pygame.joystick.Joystick(0)
+                joystick.init()
 
-        elif event.type == pygame.JOYDEVICEADDED:
-            controller_connected = True
-
-        elif game_state == STATE_CONTROLLER_DISCONNECT:
-            # Any key or button continues
-            if event.type in [pygame.KEYDOWN, pygame.JOYBUTTONDOWN, pygame.MOUSEBUTTONDOWN]:
-                game_state = STATE_HOME
-                controller_connected = True
+        # Continue from controller disconnect
+        if game_state == STATE_CONTROLLER_DISCONNECT:
+            if event.type in [pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN]:
+                if joystick_connected:
+                    game_state = STATE_HOME
+                else:
+                    # still no joystick, just go to home
+                    game_state = STATE_HOME
 
     # --- Loading Screen ---
     if game_state == STATE_LOADING:
@@ -145,3 +156,4 @@ while True:
 
     pygame.display.flip()
     clock.tick(60)
+
