@@ -1,6 +1,5 @@
 import pygame
 import sys
-import time
 
 pygame.init()
 pygame.joystick.init()
@@ -21,14 +20,13 @@ GRAY = (50, 50, 50)
 BLACK = (0, 0, 0)
 
 # --- Game States ---
-STATE_LOADING = "loading"
 STATE_HOME = "home"
 STATE_SINGLEPLAYER = "singleplayer"
 STATE_TIME_TRIAL = "time_trial"
 STATE_CAR_SELECTION = "car_selection"
 STATE_RACE = "race"
 STATE_CONTROLLER_DISCONNECT = "controller_disconnect"
-game_state = STATE_LOADING
+game_state = STATE_HOME
 
 # --- Buttons ---
 buttons = {}
@@ -47,8 +45,6 @@ audi_rs8 = pygame.Surface((200, 100))
 audi_rs8.fill((255, 0, 0))
 
 controller_connected = True if pygame.joystick.get_count() > 0 else False
-loading_start_time = time.time()
-loading_duration = 3  # seconds
 
 # --- Main Loop ---
 while True:
@@ -68,21 +64,8 @@ while True:
         elif event.type == pygame.JOYDEVICEADDED:
             controller_connected = True
 
-    # --- Loading Screen ---
-    if game_state == STATE_LOADING:
-        screen.fill(BLACK)
-        load_text = font_large.render("Loading...", True, BLUE)
-        screen.blit(load_text, load_text.get_rect(center=(WIDTH//2, HEIGHT//2)))
-        # Progress bar (optional)
-        elapsed = time.time() - loading_start_time
-        progress = min(elapsed / loading_duration, 1)
-        pygame.draw.rect(screen, WHITE, (WIDTH//4, HEIGHT//2 + 60, WIDTH//2, 30), 2)
-        pygame.draw.rect(screen, BLUE, (WIDTH//4 + 2, HEIGHT//2 + 62, (WIDTH//2 - 4) * progress, 26))
-        if elapsed >= loading_duration:
-            game_state = STATE_HOME
-
     # --- Controller Disconnect Screen ---
-    elif game_state == STATE_CONTROLLER_DISCONNECT:
+    if game_state == STATE_CONTROLLER_DISCONNECT:
         screen.fill(BLACK)
         msg = font_large.render("Controller Disconnected", True, WHITE)
         sub = font_small.render("Press any button to continue", True, WHITE)
@@ -135,3 +118,4 @@ while True:
 
     pygame.display.flip()
     clock.tick(60)
+
