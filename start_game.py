@@ -10,9 +10,9 @@ pygame.display.set_caption("Outstron")
 clock = pygame.time.Clock()
 
 # --- Fonts ---
-font_large = pygame.font.SysFont("Arial", 80)
-font_medium = pygame.font.SysFont("Arial", 50)
-font_small = pygame.font.SysFont("Arial", 30)
+font_large = pygame.font.Font(None, 80)
+font_medium = pygame.font.Font(None, 50)
+font_small = pygame.font.Font(None, 30)
 
 # --- Colors ---
 BLUE = (0, 120, 255)
@@ -39,19 +39,7 @@ def draw_button(text, x, y, w, h, color=BLUE):
 
 # --- Track ---
 bahrain_track = pygame.Surface((WIDTH, HEIGHT))
-bahrain_track.fill((34,139,34))  # simple green track
-
-# --- Crash-Safe Joystick ---
-try:
-    pygame.joystick.init()
-    if pygame.joystick.get_count() > 0:
-        joystick = pygame.joystick.Joystick(0)
-        joystick.init()
-        joystick_connected = True
-    else:
-        joystick_connected = False
-except:
-    joystick_connected = False
+bahrain_track.fill((34,139,34))  # simple green track placeholder
 
 # --- Car Class ---
 class Car:
@@ -69,29 +57,30 @@ class Car:
         self.turn_speed = 3
 
     def update(self, keys):
-        try:
-            if keys[pygame.K_w]:
-                self.speed += self.acceleration
-            elif keys[pygame.K_s]:
-                self.speed -= self.brake_deceleration
-            else:
-                self.speed *= 0.98  # friction
+        # Crash-safe update
+        if keys[pygame.K_w]:
+            self.speed += self.acceleration
+        elif keys[pygame.K_s]:
+            self.speed -= self.brake_deceleration
+        else:
+            self.speed *= 0.98  # friction
 
-            if self.speed > self.max_speed/20:
-                self.speed = self.max_speed/20
-            if self.speed < -self.max_speed/40:
-                self.speed = -self.max_speed/40
+        # Clamp speed
+        if self.speed > self.max_speed/20:
+            self.speed = self.max_speed/20
+        if self.speed < -self.max_speed/40:
+            self.speed = -self.max_speed/40
 
-            if keys[pygame.K_a]:
-                self.angle += self.turn_speed * (self.speed/2)
-            if keys[pygame.K_d]:
-                self.angle -= self.turn_speed * (self.speed/2)
+        # Turning
+        if keys[pygame.K_a]:
+            self.angle += self.turn_speed * (self.speed/2)
+        if keys[pygame.K_d]:
+            self.angle -= self.turn_speed * (self.speed/2)
 
-            rad = math.radians(self.angle)
-            self.x += math.cos(rad) * self.speed
-            self.y -= math.sin(rad) * self.speed
-        except:
-            pass
+        # Move car
+        rad = math.radians(self.angle)
+        self.x += math.cos(rad) * self.speed
+        self.y -= math.sin(rad) * self.speed
 
     def draw(self, surface):
         rotated = pygame.transform.rotate(self.orig_image, self.angle)
@@ -106,7 +95,7 @@ while True:
     mx, my = pygame.mouse.get_pos()
     click = False
 
-    for event in pygameevent.get():
+    for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
@@ -156,14 +145,6 @@ while True:
         speed_text = font_small.render(f"Speed: {speed_kmh} km/h", True, WHITE)
         screen.blit(speed_text, (10, HEIGHT-40))
 
-    pygamedisplay.flip()
+    pygame.display.flip()
     clock.tick(60)
-joystick_connected = False
-try:
-    pygame.joystick.init()
-    if pygame.joystick.get_count() > 0:
-        joystick = pygame.joystick.Joystick(0)
-        joystick.init()
-        joystick_connected = True
-except Exception:
-    joystick_connected = False
+
