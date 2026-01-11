@@ -1,26 +1,46 @@
+import tkinter as tk
+from tkinter import ttk
 import time
-import sys
+import threading
 
-def loading_screen():
+# Function to simulate loading
+def start_loading():
     for percent in range(101):
-        # At 99% show Outstron
         if percent == 99:
-            sys.stdout.write("\rOutstron  99%")
-        else:
-            sys.stdout.write(f"\rLoading {percent}%")
-        sys.stdout.flush()
+            label_text.set("Outstron")
+        progress_bar['value'] = percent
+        percent_label.config(text=f"{percent}%")
         time.sleep(0.05)  # speed of loading
+    label_text.set("Done! Game Started!")
 
-    # Finish
-    time.sleep(0.5)
-    print("\nDone! Game Started!")
-
+# Function to start game in a separate thread
 def start_game():
-    print("Welcome to the Game!")
-    input("Press Enter to Start...")
-    loading_screen()
-    # Here you can add the rest of your game logic
-    print("Game is running... (put your game code here)")
+    start_button.config(state="disabled")
+    threading.Thread(target=start_loading).start()
 
-if __name__ == "__main__":
-    start_game()
+# Create main window
+root = tk.Tk()
+root.title("Start Game")
+root.geometry("400x200")
+root.resizable(False, False)
+
+# Label
+label_text = tk.StringVar()
+label_text.set("Loading")
+label = tk.Label(root, textvariable=label_text, font=("Arial", 24))
+label.pack(pady=20)
+
+# Progress bar
+progress_bar = ttk.Progressbar(root, length=300)
+progress_bar.pack(pady=10)
+
+# Percent label
+percent_label = tk.Label(root, text="0%", font=("Arial", 16))
+percent_label.pack()
+
+# Start button
+start_button = tk.Button(root, text="Start Game", font=("Arial", 16), command=start_game)
+start_button.pack(pady=10)
+
+# Run the window
+root.mainloop()
