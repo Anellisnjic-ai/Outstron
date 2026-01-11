@@ -1,87 +1,137 @@
-import tkinter as tk
-from tkinter import ttk
-import threading
-import time
-
-# Function to simulate loading
-def start_loading():
-    for percent in range(101):
-        if percent == 99:
-            label_text.set("Outstron")
-        progress_bar['value'] = percent
-        percent_label.config(text=f"{percent}%")
-        root.update()  # update GUI
-        time.sleep(0.03)  # smooth speed
-    label_text.set("Done! Game Started!")
-
-# Automatically start loading
-def auto_start():
-    start_button.pack_forget()  # hide start button
-    threading.Thread(target=start_loading).start()
-
-# Create main window
-root = tk.Tk()
-root.title("Start Game")
-
-# Force fullscreen and remove window decorations
-root.attributes('-fullscreen', True)  # fullscreen
-root.attributes('-topmost', True)  # always on top
-root.overrideredirect(True)  # remove title bar
-root.configure(bg='#0a0a0a')  # dark background like Minecraft
-
-# Minecraft-style label
-label_text = tk.StringVar()
-label_text.set("Loading")
-label = tk.Label(root, textvariable=label_text, font=("Arial", 48, "bold"), fg="#ffffff", bg="#0a0a0a")
-label.pack(expand=True, pady=50)
-
-# Progress bar style
-style = ttk.Style()
-style.theme_use('clam')
-style.configure("green.Horizontal.TProgressbar", foreground='green', background='green', thickness=40)
-
-progress_bar = ttk.Progressbar(root, length=root.winfo_screenwidth() - 200, style="green.Horizontal.TProgressbar")
-progress_bar.pack(pady=20)
-
-# Percent label
-percent_label = tk.Label(root, text="0%", font=("Arial", 32, "bold"), fg="#ffffff", bg="#0a0a0a")
-percent_label.pack(pady=20)
-
-# Optional Start button
-start_button = tk.Button(root, text="Start Game", font=("Arial", 24, "bold"), fg="#ffffff", bg="#333333", command=auto_start)
-start_button.pack(pady=50)
-
-# Automatically start after 1 second for single-click effect
-root.after(1000, auto_start)
-
-# Close window on Escape key (useful for testing)
-root.bind("<Escape>", lambda e: root.destroy())
-
-root.mainloop()
-
 import pygame
 import sys
+import time
 
 pygame.init()
+pygame.joystick.init()
 
-# Start in windowed mode
-screen = pygame.display.set_mode((800, 600))
-pygamedisplay.set_caption("Outstron")
+# --- Screen Setup ---
+WIDTH, HEIGHT = 1280, 720
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Outstron")
+clock = pygame.time.Clock()
+font_large = pygame.font.SysFont("Arial", 80)
+font_medium = pygame.font.SysFont("Arial", 50)
+font_small = pygame.font.SysFont("Arial", 30)
 
-fullscreen = False
+# --- Colors ---
+BLUE = (0, 120, 255)
+WHITE = (255, 255, 255)
+GRAY = (50, 50, 50)
+BLACK = (0, 0, 0)
 
+# --- Game States ---
+STATE_LOADING = "loading"
+STATE_HOME = "home"
+STATE_SINGLEPLAYER = "singleplayer"
+STATE_TIME_TRIAL = "time_trial"
+STATE_CAR_SELECTION = "car_selection"
+STATE_RACE = "race"
+STATE_CONTROLLER_DISCONNECT = "controller_disconnect"
+game_state = STATE_LOADING
+
+# --- Buttons ---
+buttons = {}
+
+def draw_button(text, x, y, w, h, color=BLUE):
+    pygame.draw.rect(screen, color, (x, y, w, h))
+    label = font_medium.render(text, True, WHITE)
+    label_rect = label.get_rect(center=(x + w//2, y + h//2))
+    screen.blit(label, label_rect)
+    return pygame.Rect(x, y, w, h)
+
+# --- Placeholder Assets ---
+bahrain_track = pygame.Surface((WIDTH, HEIGHT))
+bahrain_track.fill((200, 200, 150))
+audi_rs8 = pygame.Surface((200, 100))
+audi_rs8.fill((255, 0, 0))
+
+controller_connected = True if pygame.joystick.get_count() > 0 else False
+loading_start_time = time.time()
+loading_duration = 3  # seconds
+
+# --- Main Loop ---
 while True:
-    for event in pygameevent.get():
+    screen.fill(GRAY)
+    mx, my = pygame.mouse.get_pos()
+    click = False
+    for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_f:  # Press F to toggle full screen
-                fullscreen = not fullscreen
-                if fullscreen:
-                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                else:
-                    screen = pygame.display.set_mode((800, 600))
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                click = True
+        elif event.type == pygame.JOYDEVICEREMOVED:
+            controller_connected = False
+            game_state = STATE_CONTROLLER_DISCONNECT
+        elif event.type == pygame.JOYDEVICEADDED:
+            controller_connected = True
 
-    screen.fill((50, 50, 50))  # background color
+    # --- Loading Screen ---
+    if game_state == STATE_LOADING:
+        screen.fill(BLACK)
+        load_text = font_large.render("Loading...", True, BLUE)
+        screen.blit(load_text, load_text.get_rect(center=(WIDTH//2, HEIGHT//2)))
+        # Progress bar (optional)
+        elapsed = time.time() - loading_start_time
+        progress = min(elapsed / loading_duration, 1)
+        pygame.draw.rect(screen, WHITE, (WIDTH//4, HEIGHT//2 + 60, WIDTH//2, 30), 2)
+        pygame.draw.rect(screen, BLUE, (WIDTH//4 + 2, HEIGHT//2 + 62, (WIDTH//2 - 4) * progress, 26))
+        if elapsed >= loading_duration:
+            game_state = STATE_HOME
+
+    # --- Controller Disconnect Screen ---
+    elif game_state == STATE_CONTROLLER_DISCONNECT:
+        screen.fill(BLACK)
+        msg = font_large.render("Controller Disconnected", True, WHITE)
+        sub = font_small.render("Press any button to continue", True, WHITE)
+        screen.blit(msg, msg.get_rect(center=(WIDTH//2, HEIGHT//2 - 50)))
+        screen.blit(sub, sub.get_rect(center=(WIDTH//2, HEIGHT//2 + 50)))
+        if click or event.type == pygame.KEYDOWN or event.type == pygame.JOYBUTTONDOWN:
+            game_state = STATE_HOME
+            controller_connected = True
+
+    # --- Home Screen ---
+    elif game_state == STATE_HOME:
+        title = font_large.render("Outstron", True, BLUE)
+        screen.blit(title, title.get_rect(center=(WIDTH//2, HEIGHT//4)))
+
+        buttons['singleplayer'] = draw_button("Singleplayer", WIDTH//2-150, HEIGHT//2, 300, 80)
+        buttons['multiplayer'] = draw_button("Multiplayer", WIDTH//2-150, HEIGHT//2 - 120, 300, 80, color=GRAY)  # Placeholder
+
+        if click:
+            if buttons['singleplayer'].collidepoint(mx, my):
+                game_state = STATE_SINGLEPLAYER
+
+    # --- Singleplayer Screen ---
+    elif game_state == STATE_SINGLEPLAYER:
+        title = font_large.render("Singleplayer", True, BLUE)
+        screen.blit(title, title.get_rect(center=(WIDTH//2, HEIGHT//4)))
+
+        buttons['time_trial'] = draw_button("Time Trial", WIDTH//2-150, HEIGHT//2, 300, 80)
+        if click:
+            if buttons['time_trial'].collidepoint(mx, my):
+                game_state = STATE_CAR_SELECTION
+
+    # --- Car Selection Screen ---
+    elif game_state == STATE_CAR_SELECTION:
+        title = font_large.render("Select Your Car", True, BLUE)
+        screen.blit(title, title.get_rect(center=(WIDTH//2, HEIGHT//4)))
+
+        buttons['audi'] = draw_button("Audi RS8", WIDTH//2-150, HEIGHT//2, 300, 80)
+        screen.blit(audi_rs8, (WIDTH//2-100, HEIGHT//2 + 100))
+
+        if click:
+            if buttons['audi'].collidepoint(mx, my):
+                game_state = STATE_RACE
+
+    # --- Race Screen ---
+    elif game_state == STATE_RACE:
+        screen.blit(bahrain_track, (0, 0))
+        screen.blit(audi_rs8, (WIDTH//2-100, HEIGHT//2+200))
+        race_text = font_large.render("Bahrain GPX", True, BLUE)
+        screen.blit(race_text, race_text.get_rect(center=(WIDTH//2, 50)))
+
     pygame.display.flip()
+    clock.tick(60)
