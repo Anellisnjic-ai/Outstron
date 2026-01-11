@@ -106,7 +106,7 @@ while True:
     mx, my = pygame.mouse.get_pos()
     click = False
 
-    for event in pygame.event.get():
+    for event in pygameevent.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
@@ -156,5 +156,14 @@ while True:
         speed_text = font_small.render(f"Speed: {speed_kmh} km/h", True, WHITE)
         screen.blit(speed_text, (10, HEIGHT-40))
 
-    pygame.display.flip()
+    pygamedisplay.flip()
     clock.tick(60)
+joystick_connected = False
+try:
+    pygame.joystick.init()
+    if pygame.joystick.get_count() > 0:
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+        joystick_connected = True
+except Exception:
+    joystick_connected = False
