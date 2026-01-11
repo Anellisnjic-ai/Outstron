@@ -59,3 +59,29 @@ root.bind("<Escape>", lambda e: root.destroy())
 
 root.mainloop()
 
+import pygame
+import sys
+
+pygame.init()
+
+# Start in windowed mode
+screen = pygame.display.set_mode((800, 600))
+pygamedisplay.set_caption("Outstron")
+
+fullscreen = False
+
+while True:
+    for event in pygameevent.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_f:  # Press F to toggle full screen
+                fullscreen = not fullscreen
+                if fullscreen:
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                else:
+                    screen = pygame.display.set_mode((800, 600))
+
+    screen.fill((50, 50, 50))  # background color
+    pygame.display.flip()
